@@ -6,9 +6,9 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    server_status(0),
-    tcpServer(NULL),
     clog(NULL),
+    tcpServer(NULL),
+    server_status(0),
     numClients(0)
 {
 
