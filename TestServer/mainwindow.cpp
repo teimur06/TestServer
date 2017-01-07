@@ -9,13 +9,15 @@ MainWindow::MainWindow(QWidget *parent) :
     clog(NULL),
     tcpServer(NULL),
     server_status(0),
-    numClients(0)
+    numClients(0),
+    dialogSettings(NULL)
 {
 
     QSettings s("TestSerer", "TestSerer");
 
     ui->setupUi(this);
-    ui->setupUi(this);
+    createAction();
+    createMenu();
 
     try {
         clog = new Clog(QApplication::applicationName(),QApplication::applicationDirPath()+"\\TestServer.log",10);
@@ -42,6 +44,36 @@ MainWindow::MainWindow(QWidget *parent) :
         on_StartServerButton_clicked();
     }
 }
+
+void MainWindow::createMenu()
+{
+    mainMenu = this->menuBar()->addMenu(tr("&Tools"));
+    mainMenu->addAction(actionSetting);
+
+}
+
+void MainWindow::createAction()
+{
+   actionSetting = new QAction(tr("&Setting"),this);
+   actionSetting->setShortcut(QKeySequence::Preferences);
+   connect(actionSetting,&QAction::triggered, this, &MainWindow::slotSetting);
+
+}
+
+
+void MainWindow::slotSetting()
+{
+    dialogSettings = new DialogSettings(this);
+    if(dialogSettings->exec() == QDialog::Accepted)
+    {
+        QMessageBox::information(this, "dialogSettings", "QDialog::accept()");
+    }
+    if (dialogSettings != NULL) delete dialogSettings;
+
+
+
+}
+
 
 MainWindow::~MainWindow()
 {
