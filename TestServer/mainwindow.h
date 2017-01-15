@@ -11,8 +11,10 @@
 #include <QAction>
 #include <QDialog>
 
-#include "Clog.h"
+
 #include "dialogsettings.h"
+#include "settings.h"
+#include "Clog.h"
 
 namespace Ui {
 class MainWindow;
@@ -29,6 +31,8 @@ public:
 private:
     void createMenu();
     void createAction();
+    bool loadSettings();
+    void saveSettings();
 private slots:
 
     void newuser();
@@ -43,7 +47,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    Clog * clog;
     QTcpServer * tcpServer;
     int server_status;
     QMap<int,QTcpSocket *> SClients;
@@ -51,6 +54,8 @@ private:
     QMenu * mainMenu;
     QAction * actionSetting;
     DialogSettings * dialogSettings;
+    Settings * setting;
+    Clog clog;
 
 };
 

@@ -1,26 +1,45 @@
 #include "Clog.h"
 
 
+    Clog::Clog()
+    {
 
-Clog::Clog(QString module, QString pathLog, int level)
+    };
+
+
+    Clog::Clog(QString module, QString pathLog, int level)
 	{
-        fout.setFileName(pathLog);
-        fout.open(QIODevice::Append | QIODevice::Text);
-		this->module = module;
-		level > 10 ? this->level = 10 : this->level = level;
-		level <  1 ? this->level = 1 : this->level = level;
-        if (!fout.isOpen()) throw - 2;
-		
+        init(module, pathLog, level);
 	}
 
-	Clog::~Clog()
+
+    Clog::~Clog()
 	{
-		fout.close(); // çàêðûâàåì ôàéë
+		fout.close(); // Ð·Ð°ÐºÑ€Ñ‹Ð²Ð°ÐµÐ¼ Ñ„Ð°Ð¹Ð»
 	}
 
+
+    bool Clog::init(QString module, QString pathLog, int level)
+    {
+        QString fileLog = pathLog;
+        if (fileLog.isEmpty()) fileLog = "%temp%/TestServer.log";
+        fileLog = fileLog.replace("%temp%",QDir::tempPath());
+        fileLog = fileLog.replace("%programmdir%",QApplication::applicationDirPath());
+        fout.setFileName(fileLog);
+        this->module = module;
+        level > 10 ? this->level = 10 : this->level = level;
+        level <  1 ? this->level = 1 : this->level = level;
+        return fout.open(QIODevice::Append | QIODevice::Text);
+    }
+
+    bool Clog::isOpenLog()
+    {
+        return fout.isOpen();
+    }
 
     void Clog::writeLn(QString text)
 	{
+        if (!fout.isOpen()) return;
         QTextStream out(&fout);
 		
         out << QDateTime::currentDateTime().date().day() << '.' << QDateTime::currentDateTime().date().month() << '.' << QDateTime::currentDateTime().date().year() << ' ' \
@@ -31,8 +50,14 @@ Clog::Clog(QString module, QString pathLog, int level)
 	}
 
 
+    QString Clog::getErrorString()
+    {
+        return fout.errorString();
+    }
+
     void Clog::writeLn(QString text, int level)
 	{
+         if (!fout.isOpen()) return;
 		if (level <= this->level)
 			this->writeLn(text);
 	}

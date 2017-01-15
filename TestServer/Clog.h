@@ -5,8 +5,12 @@
 #include <QFile>
 #include <QDateTime>
 #include <QTextStream>
+#include <QDir>
+#include <QApplication>
+#include <QMessageBox>
 
-// Класс лога
+
+// РљР»Р°СЃСЃ Р»РѕРіР°
 class Clog
 {
 private:
@@ -14,17 +18,22 @@ private:
     QString module;
 	int level;
 public:
-	// Конструктор открывает файл лога
+    Clog();
+	// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РѕС‚РєСЂС‹РІР°РµС‚ С„Р°Р№Р» Р»РѕРіР°
     Clog(QString module, QString pathLog, int level = 10);
-	// Деструктор закрывает файл лога
+	// Р”РµСЃС‚СЂСѓРєС‚РѕСЂ Р·Р°РєСЂС‹РІР°РµС‚ С„Р°Р№Р» Р»РѕРіР°
 	~Clog();
-	// Функция добовляет текст в лог
+	// Р¤СѓРЅРєС†РёСЏ РґРѕР±РѕРІР»СЏРµС‚ С‚РµРєСЃС‚ РІ Р»РѕРі
     void writeLn(QString text);
     void writeLn(QString text, int level);
-	// Устанавливает, возвращает уровень вывода лога
+	// РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚, РІРѕР·РІСЂР°С‰Р°РµС‚ СѓСЂРѕРІРµРЅСЊ РІС‹РІРѕРґР° Р»РѕРіР°
 	void setLevel(int level);
 	int getLevel();
     void operator << (QString text);
+
+    bool isOpenLog();
+    QString getErrorString();
+    bool init(QString module, QString pathLog, int level);
 };
 
 #endif // CLOG_H

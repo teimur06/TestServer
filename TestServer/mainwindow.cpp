@@ -6,44 +6,60 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    clog(NULL),
     tcpServer(NULL),
     server_status(0),
     numClients(0),
-    dialogSettings(NULL)
+    dialogSettings(NULL),
+    setting(NULL)
 {
-
-    QSettings s("TestSerer", "TestSerer");
-
     ui->setupUi(this);
-    createAction();
-    createMenu();
+    setting = new Settings();
 
-    try {
-        clog = new Clog(QApplication::applicationName(),QApplication::applicationDirPath()+"\\TestServer.log",10);
-    } catch (int) {
-      QMessageBox::about(this,"Ошибка создания лога","clog = new Clog ошибка");
-    }
-    *clog << "Поехали";
+    clog.init(QApplication::applicationName(),setting->getStructSetting()->logFile,10);
+    if (!clog.isOpenLog()) QMessageBox::about(this,"Error create log file",clog.getErrorString()+"\r\n"+setting->getStructSetting()->logFile );
+    clog << "Поехали";
+
 
     connect(ui->StartServerButton,SIGNAL(clicked()),this,SLOT(on_StartServerButton_clicked()));
     connect(ui->StopServerButton,SIGNAL(clicked()),this,SLOT(on_StopServerButton_clicked()));
     connect(ui->ResponseTextBrowser,SIGNAL(textChanged()),this,SLOT(on_ResponseTextBrowser_textChanged()));
     connect(ui->RequestTextBrowser,SIGNAL(textChanged()),this,SLOT(on_RequestTextBrowser_textChanged()));
-
     connect(ui->getLengthSelectedTextResponse,SIGNAL(clicked()),this,SLOT(on_getLengthSelectedTextResponse_clicked()));
 
-    ui->PortSpinBox->setValue(s.value("PortSpinBox",5522).toInt());
-    ui->ResponseTextBrowser->setText(s.value("ResponseTextBrowser","Hi").toString());
-    ui->checkOutLengthInt32->setChecked(s.value("checkOutLengthInt32",false).toBool());
-    ui->checkOutNull->setChecked(s.value("checkOutNull",false).toBool());
-    ui->checkCloseAfterAnswer->setChecked(s.value("checkCloseAfterAnswer",false).toBool());
-    bool bStartServerButtonIsEnable = s.value("StartServerButton",false).toBool();
-    if (!bStartServerButtonIsEnable)
+    createAction();
+    createMenu();
+
+    if (!loadSettings())
     {
         on_StartServerButton_clicked();
     }
 }
+
+
+
+bool MainWindow::loadSettings()
+{
+    StructSetting * structSetting = setting->getStructSetting();
+    ui->PortSpinBox->setValue(structSetting->PortSpinBox);
+    ui->ResponseTextBrowser->setText(structSetting->ResponseTextBrowser);
+    ui->checkOutLengthInt32->setChecked(structSetting->checkOutLengthInt32);
+    ui->checkOutNull->setChecked(structSetting->checkOutNull);
+    ui->checkCloseAfterAnswer->setChecked(structSetting->checkCloseAfterAnswer);
+    return structSetting->StartServerButton;
+}
+
+void MainWindow::saveSettings()
+{
+    StructSetting  * structSetting = setting->getStructSetting();
+    structSetting->PortSpinBox = ui->PortSpinBox->value();
+    structSetting->ResponseTextBrowser = ui->ResponseTextBrowser->toPlainText();
+    structSetting->checkOutLengthInt32 = ui->checkOutLengthInt32->isChecked();
+    structSetting->checkOutNull = ui->checkOutNull->isChecked();
+    structSetting->checkCloseAfterAnswer = ui->checkCloseAfterAnswer->isChecked();
+    structSetting->StartServerButton = ui->StartServerButton->isEnabled();
+    setting->saveSettings(structSetting);
+}
+
 
 void MainWindow::createMenu()
 {
@@ -63,10 +79,10 @@ void MainWindow::createAction()
 
 void MainWindow::slotSetting()
 {
-    dialogSettings = new DialogSettings(this);
+    dialogSettings = new DialogSettings(setting, this);
     if(dialogSettings->exec() == QDialog::Accepted)
     {
-        QMessageBox::information(this, "dialogSettings", "QDialog::accept()");
+
     }
     if (dialogSettings != NULL) delete dialogSettings;
 
@@ -77,23 +93,11 @@ void MainWindow::slotSetting()
 
 MainWindow::~MainWindow()
 {
-    QSettings s("TestSerer", "TestSerer");
-    s.setValue("PortSpinBox",ui->PortSpinBox->value());
-    s.setValue("ResponseTextBrowser",ui->ResponseTextBrowser->toPlainText());
-    s.setValue("checkOutLengthInt32",ui->checkOutLengthInt32->isChecked());
-    s.setValue("checkOutNull",ui->checkOutNull->isChecked());
-    s.setValue("checkCloseAfterAnswer",ui->checkCloseAfterAnswer->isChecked());
-    s.setValue("StartServerButton",ui->StartServerButton->isEnabled());
+    saveSettings();
 
-    if (tcpServer)
-    {
-        on_StopServerButton_clicked();
-    }
-    if (clog)
-    {
-        *clog << "Завершения работы";
-        delete clog;
-    }
+    if (tcpServer) on_StopServerButton_clicked();
+    if (setting) delete setting;
+    clog << "Завершения работы";
 
     delete ui;
 }
@@ -106,7 +110,7 @@ void MainWindow::newuser()
     if(server_status==1){
         QTcpSocket* clientSocket=tcpServer->nextPendingConnection();
         int idusersocs=clientSocket->socketDescriptor();
-        *clog << "Новый клиент ip: " + clientSocket->peerAddress().toString();
+        clog << "Новый клиент ip: " + clientSocket->peerAddress().toString();
         SClients[idusersocs]=clientSocket;
         connect(SClients[idusersocs],SIGNAL(readyRead()),this, SLOT(slotReadClient()));
         connect(SClients[idusersocs],SIGNAL(disconnected()),this, SLOT(slotDisconectClient()));
@@ -129,7 +133,7 @@ void MainWindow::slotReadClient()
        QTcpSocket* clientSocket = (QTcpSocket*)sender();
        // Получаем дескриптор, для того, чтоб в случае закрытия сокета удалить его из карты
        ui->RequestTextBrowser->setPlainText(clientSocket->readAll());
-       *clog << "Клиент " +clientSocket->peerAddress().toString() + " прислал данные";
+       clog << "Клиент " +clientSocket->peerAddress().toString() + " прислал данные";
        ui->RequestGroupBox->setTitle("Пришол запрос от: "+clientSocket->peerAddress().toString());
        // Пример отправки ответа клиенту
        QTextStream os(clientSocket);
@@ -168,7 +172,7 @@ void MainWindow::on_StopServerButton_clicked()
              SClients.remove(i);
          }
          tcpServer->close();
-         *clog << "Сервер остановлен!";
+         clog << "Сервер остановлен!";
          server_status=0;
          delete tcpServer;
          tcpServer = NULL;
@@ -183,13 +187,13 @@ void MainWindow::on_StartServerButton_clicked()
            tcpServer = new QTcpServer(this);
             connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newuser()));
             if (!tcpServer->listen(QHostAddress::Any, ui->PortSpinBox->value()) && server_status==0) {
-                *clog << "Сервер не запущен: " + tcpServer->errorString();
+                clog << "Сервер не запущен: " + tcpServer->errorString();
 
             } else {
                 server_status=1;
                 ui->StartServerButton->setEnabled(false);
                 ui->StopServerButton->setEnabled(true);
-                *clog << "Сервер запущен!";
+                clog << "Сервер запущен!";
             }
         }
 }

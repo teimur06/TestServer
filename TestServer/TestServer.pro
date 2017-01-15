@@ -15,11 +15,13 @@ RC_FILE = TestServer.rc
 SOURCES += main.cpp\
         mainwindow.cpp \
     Clog.cpp \
-    dialogsettings.cpp
+    dialogsettings.cpp \
+    settings.cpp
 
 HEADERS  += mainwindow.h \
     Clog.h \
-    dialogsettings.h
+    dialogsettings.h \
+    settings.h
 
 FORMS    += mainwindow.ui \
     dialogsettings.ui
