@@ -15,7 +15,7 @@ Clog::Clog(QString module, QString pathLog, int level)
 
 	Clog::~Clog()
 	{
-		fout.close(); // закрываем файл
+		fout.close(); // Р·Р°РєСЂС‹РІР°РµРј С„Р°Р№Р»
 	}
 
 
